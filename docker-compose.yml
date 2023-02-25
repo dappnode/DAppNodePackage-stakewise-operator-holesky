@@ -1,0 +1,23 @@
+version: "3.5"
+services:
+  stakewise-operator:
+    image: "stakewise-operator.stakewise-operator.dnp.dappnode.eth:0.1.0"
+    build:
+      context: ./v3-operator
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - "stakewise:/data"
+    environment:
+      - NETWORK=goerli
+      - VAULT_CONTRACT_ADDRESS
+      - DATABASE_DIR=/data/database
+      - KEYSTORES_PATH=/data/keystores
+      - KEYSTORES_PASSWORD_PATH=/data/keystores/password.txt
+      - KEYSTORES_PASSWORD
+      - DEPOSIT_DATA_PATH=/data/deposit_data.json
+      - OPERATOR_KEYSTORE_PATH=/data/operator/wallet.json
+      - OPERATOR_KEYSTORE_PASSWORD_PATH=/data/operator/password.txt
+      - OPERATOR_KEYSTORE_PASSWORD
+volumes:
+  stakewise: {}

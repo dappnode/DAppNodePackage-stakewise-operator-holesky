@@ -1,0 +1,33 @@
+{
+  "name": "stakewise-operator.dnp.dappnode.eth",
+  "version": "0.1.0",
+  "description": "stakewise.public.dappnode.eth description",
+  "type": "service",
+  "author": "edu",
+  "categories": [
+    "Developer tools"
+  ],
+  "architectures": ["linux/amd64"],
+  "links": {
+    "homepage": "https://your-project-homepage-or-docs.io"
+  },
+  "license": "GPL-3.0",
+  "globalEnvs": [
+    {
+      "envs": [
+        "CONSENSUS_CLIENT_PRATER",
+        "EXECUTION_CLIENT_PRATER"
+      ],
+      "services": [
+        "stakewise-operator"
+      ]
+    }
+  ],
+  "backup": [
+    {
+      "name": "data",
+      "path": "/data",
+      "service": "stakewise-operator"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+version: "2"
+fields:
+  - id: vault_contract_address
+    target:
+      type: environment
+      name: VAULT_CONTRACT_ADDRESS
+      service: stakewise-operator
+    title: vault contract address
+    description: >-
+      vault contract address
+  - id: operator_wallet
+    target:
+      type: fileUpload
+      path: /data/operator/wallet.json
+      service: stakewise-operator
+    title: Wallet for the operator
+    description: Wallet for the operator
+  - id: passphrase
+    target:
+      type: environment
+      name: OPERATOR_KEYSTORE_PASSWORD
+      service: stakewise-operator
+    title: Passphrase for the wallet operator
+    secret: true
+    description: >-
+      Passphrase to desencrypt the keyfile
+  - id: deposit_data
+    target:
+      type: fileUpload
+      path: /data/deposit_data.json
+      service: stakewise-operator
+    title: Deposit data
+    description: Deposit data
+  - id: validator_key
+    target:
+      type: fileUpload
+      path: /data/keystores/keystore.json
+      service: stakewise-operator
+    title: Validator keystores
+    description: Wallet for the operator
+  - id: keystores_password
+    target:
+      type: environment
+      name: KEYSTORES_PASSWORD
+      service: stakewise-operator
+    title: Passphrase for the keystore
+    secret: true
+    description: >-
+      Passphrase to desencrypt the keystore file
