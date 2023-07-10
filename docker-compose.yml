@@ -1,10 +1,9 @@
 version: "3.5"
 services:
-  stakewise-operator:
-    image: "stakewise-operator.stakewise-operator.dnp.dappnode.eth:0.1.0"
+  operator:
+    image: "operator.stakewise-operator-prater.dnp.dappnode.eth:0.1.0"
     build:
-      context: ./v3-operator
-      dockerfile: Dockerfile
+      context: ./operator
     restart: unless-stopped
     volumes:
       - "stakewise:/data"

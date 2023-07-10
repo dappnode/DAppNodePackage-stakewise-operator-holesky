@@ -1,33 +1,26 @@
 {
-  "name": "stakewise-operator.dnp.dappnode.eth",
+  "name": "stakewise-operator-prater.dnp.dappnode.eth",
   "version": "0.1.0",
-  "description": "stakewise.public.dappnode.eth description",
+  "description": "StakeWise V3 allows anyone who is capable of running Ethereum validators to participate in liquid staking and receive staking delegations from others.",
   "type": "service",
-  "author": "edu",
-  "categories": [
-    "Developer tools"
-  ],
+  "author": "DAppNode Association <admin@dappnode.io> (https://github.com/dappnode)",
+  "categories": ["ETH2.0"],
   "architectures": ["linux/amd64"],
   "links": {
-    "homepage": "https://your-project-homepage-or-docs.io"
+    "homepage": "https://stakewise.io/#home"
   },
   "license": "GPL-3.0",
   "globalEnvs": [
     {
-      "envs": [
-        "CONSENSUS_CLIENT_PRATER",
-        "EXECUTION_CLIENT_PRATER"
-      ],
-      "services": [
-        "stakewise-operator"
-      ]
+      "envs": ["CONSENSUS_CLIENT_PRATER", "EXECUTION_CLIENT_PRATER"],
+      "services": ["operator"]
     }
   ],
   "backup": [
     {
       "name": "data",
       "path": "/data",
-      "service": "stakewise-operator"
+      "service": "operator"
     }
   ]
 }
