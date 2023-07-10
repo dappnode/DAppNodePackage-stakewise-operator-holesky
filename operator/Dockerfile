@@ -1,0 +1,1 @@
+FROM europe-west4-docker.pkg.dev/stakewiselabs/public/v3-operator:master

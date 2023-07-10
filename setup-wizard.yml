@@ -4,7 +4,7 @@ fields:
     target:
       type: environment
       name: VAULT_CONTRACT_ADDRESS
-      service: stakewise-operator
+      service: operator
     title: vault contract address
     description: >-
       vault contract address
@@ -12,14 +12,14 @@ fields:
     target:
       type: fileUpload
       path: /data/operator/wallet.json
-      service: stakewise-operator
+      service: operator
     title: Wallet for the operator
     description: Wallet for the operator
   - id: passphrase
     target:
       type: environment
       name: OPERATOR_KEYSTORE_PASSWORD
-      service: stakewise-operator
+      service: operator
     title: Passphrase for the wallet operator
     secret: true
     description: >-
@@ -28,22 +28,22 @@ fields:
     target:
       type: fileUpload
       path: /data/deposit_data.json
-      service: stakewise-operator
+      service: operator
     title: Deposit data
     description: Deposit data
   - id: validator_key
     target:
       type: fileUpload
       path: /data/keystores/keystore.json
-      service: stakewise-operator
+      service: operator
     title: Validator keystores
     description: Wallet for the operator
   - id: keystores_password
     target:
       type: environment
       name: KEYSTORES_PASSWORD
-      service: stakewise-operator
+      service: operator
     title: Passphrase for the keystore
     secret: true
     description: >-
-      Passphrase to desencrypt the keystore file
+      Passphrase to decrypt the keystore file
