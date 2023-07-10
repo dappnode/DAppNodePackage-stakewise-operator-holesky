@@ -23,7 +23,7 @@ fields:
     title: Passphrase for the wallet operator
     secret: true
     description: >-
-      Passphrase to desencrypt the keyfile
+      Passphrase to decrypt the keyfile
   - id: deposit_data
     target:
       type: fileUpload
