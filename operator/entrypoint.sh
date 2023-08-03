@@ -53,7 +53,7 @@ echo "$KEYSTORES_PASSWORD" >/data/keystores/password.txt
 # Write hot wallet password to file
 echo "$OPERATOR_WALLET_PASSWORD" >/data/operator/password.txt
 
-exec py /src/main.py start --verbose false \
+exec python3 /src/main.py start --verbose false \
     --metrics-port 6000 \
     --metrics-host "*" \
     --network goerli \
