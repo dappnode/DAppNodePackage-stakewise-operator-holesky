@@ -8,15 +8,9 @@ services:
     volumes:
       - "stakewise:/data"
     environment:
-      - NETWORK=goerli
       - VAULT_CONTRACT_ADDRESS
-      - DATABASE_DIR=/data/database
-      - KEYSTORES_PATH=/data/keystores
-      - KEYSTORES_PASSWORD_PATH=/data/keystores/password.txt
+      - OPERATOR_WALLET_PASSWORD
       - KEYSTORES_PASSWORD
-      - DEPOSIT_DATA_PATH=/data/deposit_data.json
-      - OPERATOR_KEYSTORE_PATH=/data/operator/wallet.json
-      - OPERATOR_KEYSTORE_PASSWORD_PATH=/data/operator/password.txt
-      - OPERATOR_KEYSTORE_PASSWORD
+      - HARVEST_VAULT=false
 volumes:
   stakewise: {}

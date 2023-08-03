@@ -15,10 +15,10 @@ fields:
       service: operator
     title: Wallet for the operator
     description: Wallet for the operator
-  - id: passphrase
+  - id: operator_wallet_password
     target:
       type: environment
-      name: OPERATOR_KEYSTORE_PASSWORD
+      name: OPERATOR_WALLET_PASSWORD
       service: operator
     title: Passphrase for the wallet operator
     secret: true
