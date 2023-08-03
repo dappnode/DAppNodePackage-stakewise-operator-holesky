@@ -1,6 +1,6 @@
 FROM europe-west4-docker.pkg.dev/stakewiselabs/public/v3-operator:master
 
-RUN mkdir -p /data
+RUN mkdir -p /data/keystores && mkdir -p /data/operator
 
 # Install python3
 RUN apk update && apk add python3
