@@ -11,7 +11,7 @@ fields:
   - id: operator_wallet
     target:
       type: fileUpload
-      path: /data/operator/wallet.json
+      path: /app/data/operator/wallet.json
       service: operator
     title: Wallet for the operator
     description: Wallet for the operator
@@ -27,14 +27,14 @@ fields:
   - id: deposit_data
     target:
       type: fileUpload
-      path: /data/deposit_data.json
+      path: /app/data/deposit_data.json
       service: operator
     title: Deposit data
     description: Deposit data
   - id: validator_key
     target:
       type: fileUpload
-      path: /data/keystores/keystore.json
+      path: /app/data/keystores/keystore.json
       service: operator
     title: Validator keystores
     description: Wallet for the operator

@@ -6,11 +6,10 @@ services:
       context: ./operator
     restart: unless-stopped
     volumes:
-      - "stakewise:/data"
+      - "stakewise:/app/data"
     environment:
       - VAULT_CONTRACT_ADDRESS
       - OPERATOR_WALLET_PASSWORD
       - KEYSTORES_PASSWORD
-      - HARVEST_VAULT=false
 volumes:
   stakewise: {}

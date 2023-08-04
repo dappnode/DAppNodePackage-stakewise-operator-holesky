@@ -19,7 +19,7 @@
   "backup": [
     {
       "name": "data",
-      "path": "/data",
+      "path": "/app/data",
       "service": "operator"
     }
   ]
