@@ -17,7 +17,7 @@ get_execution_endpoint() {
         echo "http://goerli-erigon.dappnode:8545"
         ;;
     *)
-        echo "Unknown value for _DAPPNODE_GLOBAL_EXECUTION_CLIENT_PRATER: $_DAPPNODE_GLOBAL_EXECUTION_CLIENT_PRATER"
+        echo "$_DAPPNODE_GLOBAL_EXECUTION_CLIENT_PRATER"
         ;;
     esac
 }
@@ -40,7 +40,7 @@ get_beacon_node_endpoint() {
         echo "http://beacon-chain.lodestar-prater.dappnode:3500"
         ;;
     *)
-        echo "Unknown value for _DAPPNODE_GLOBAL_CONSENSUS_CLIENT_PRATER: $_DAPPNODE_GLOBAL_CONSENSUS_CLIENT_PRATER"
+        echo "$_DAPPNODE_GLOBAL_CONSENSUS_CLIENT_PRATER"
         ;;
     esac
 }
@@ -60,8 +60,7 @@ exec python3 /app/src/main.py start --network goerli \
     --vault $VAULT_CONTRACT_ADDRESS \
     --execution-endpoints $(get_execution_endpoint) \
     --consensus-endpoints $(get_beacon_node_endpoint) \
-    --data-dir /app/data/stakewise
-
-# TODO: Add metrics
-#  --metrics-port 6000 \
-#    --metrics-host "*" \
+    --data-dir /app/data/stakewise \
+    --metrics-port 8008 \
+    --metrics-host 0.0.0.0 \
+    --verbose
