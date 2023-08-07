@@ -3,7 +3,9 @@ services:
   operator:
     image: "operator.stakewise-operator-prater.dnp.dappnode.eth:0.1.0"
     build:
-      context: ./operator
+      context: operator
+      args:
+        UPSTREAM_VERSION: v0.2.5
     restart: unless-stopped
     volumes:
       - "stakewise:/app/data"

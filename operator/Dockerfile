@@ -1,8 +1,8 @@
-FROM europe-west4-docker.pkg.dev/stakewiselabs/public/v3-operator:master
+ARG UPSTREAM_VERSION
 
-RUN mkdir -p /app/data/keystores
-RUN mkdir -p /app/data/operator
-RUN mkdir -p /app/data/stakewise
+FROM europe-west4-docker.pkg.dev/stakewiselabs/public/v3-operator:${UPSTREAM_VERSION}
+
+RUN mkdir -p /app/data/keystores /app/data/operator /app/data/stakewise
 
 # Install python3
 RUN apk update && apk add python3
