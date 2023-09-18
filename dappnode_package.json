@@ -1,7 +1,7 @@
 {
   "name": "stakewise-operator-prater.dnp.dappnode.eth",
   "version": "0.1.0",
-  "upstreamVersion": "v0.2.7",
+  "upstreamVersion": "v0.3.0",
   "upstreamRepo": "stakewise/v3-operator",
   "description": "StakeWise V3 allows anyone who is capable of running Ethereum validators to participate in liquid staking and receive staking delegations from others.",
   "type": "service",
