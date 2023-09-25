@@ -5,7 +5,7 @@ services:
     build:
       context: operator
       args:
-        UPSTREAM_VERSION: v0.3.2.beta
+        UPSTREAM_VERSION: v0.3.1
     restart: unless-stopped
     volumes:
       - "stakewise:/app/data"
