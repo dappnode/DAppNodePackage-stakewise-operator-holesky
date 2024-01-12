@@ -4,8 +4,10 @@ FROM europe-west4-docker.pkg.dev/stakewiselabs/public/v3-operator:${UPSTREAM_VER
 
 RUN mkdir -p /app/data/keystores /app/data/operator /app/data/stakewise
 
+USER root
+
 # Install python3
-RUN apk update && apk add python3
+RUN apt-get update && apt-get install python3 -y
 
 COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
