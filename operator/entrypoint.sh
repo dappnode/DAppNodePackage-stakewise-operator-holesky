@@ -48,6 +48,13 @@ get_beacon_node_endpoint() {
     esac
 }
 
+# These files need to be uploaded (via setup wizard or restoring backup)
+if [ ! -f "/app/data/operator/wallet.json" ] || [ ! -f "/app/data/operator/deposit_data.json" ] || [ ! -f "/app/data/keystores/keystore.json" ]; then
+    echo "Waiting for files to be uploaded (operator wallet, validator key and deposit files)..."
+    sleep 600
+    exit 1
+fi
+
 # Write keystore password to file
 echo "$KEYSTORES_PASSWORD" >/app/data/keystores/password.txt
 
