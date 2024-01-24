@@ -1,7 +1,7 @@
 {
   "name": "stakewise-operator-holesky.dnp.dappnode.eth",
   "version": "0.1.0",
-  "upstreamVersion": "v1.0.7",
+  "upstreamVersion": "v1.0.8",
   "upstreamRepo": "stakewise/v3-operator",
   "description": "StakeWise V3 allows anyone who is capable of running Ethereum validators to participate in liquid staking and receive staking delegations from others.",
   "type": "service",
