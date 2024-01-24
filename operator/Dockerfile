@@ -4,6 +4,8 @@ FROM europe-west4-docker.pkg.dev/stakewiselabs/public/v3-operator:${UPSTREAM_VER
 
 RUN mkdir -p /app/data/keystores /app/data/operator /app/data/stakewise
 
+ENV NETWORK=holesky
+
 USER root
 
 # Install python3

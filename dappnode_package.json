@@ -1,5 +1,5 @@
 {
-  "name": "stakewise-operator-prater.dnp.dappnode.eth",
+  "name": "stakewise-operator-holesky.dnp.dappnode.eth",
   "version": "0.1.0",
   "upstreamVersion": "v1.0.7",
   "upstreamRepo": "stakewise/v3-operator",
@@ -14,7 +14,7 @@
   "license": "GPL-3.0",
   "globalEnvs": [
     {
-      "envs": ["CONSENSUS_CLIENT_PRATER", "EXECUTION_CLIENT_PRATER"],
+      "envs": ["CONSENSUS_CLIENT_HOLESKY", "EXECUTION_CLIENT_HOLESKY"],
       "services": ["operator"]
     }
   ],
