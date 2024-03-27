@@ -5,45 +5,21 @@ fields:
       type: environment
       name: VAULT_CONTRACT_ADDRESS
       service: operator
-    title: vault contract address
+    title: Vault contract address
     description: >-
-      vault contract address
-  - id: operator_wallet
-    target:
-      type: fileUpload
-      path: /app/data/operator/wallet.json
-      service: operator
-    title: Wallet for the operator
-    description: Wallet for the operator
-  - id: operator_wallet_password
+      Contract address of the StakeWise vault
+    required: true
+    pattern: ^0x[0-9a-fA-F]{40}$
+    patternErrorMessage: "Invalid contract address"
+
+  - id: validators_number
     target:
       type: environment
-      name: OPERATOR_WALLET_PASSWORD
+      name: VALIDATORS_NUMBER
       service: operator
-    title: Passphrase for the wallet operator
-    secret: true
+    title: Number of validators
     description: >-
-      Passphrase to decrypt the keyfile
-  - id: deposit_data
-    target:
-      type: fileUpload
-      path: /app/data/deposit_data.json
-      service: operator
-    title: Deposit data
-    description: Deposit data
-  - id: validator_key
-    target:
-      type: fileUpload
-      path: /app/data/keystores/keystore.json
-      service: operator
-    title: Validator keystores
-    description: Wallet for the operator
-  - id: keystores_password
-    target:
-      type: environment
-      name: KEYSTORES_PASSWORD
-      service: operator
-    title: Passphrase for the keystore
-    secret: true
-    description: >-
-      Passphrase to decrypt the keystore file
+      Number of validators to be created
+    required: true
+    pattern: ^[1-9][0-9]*$
+    patternErrorMessage: "Invalid number of validators"

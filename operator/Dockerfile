@@ -1,17 +1,13 @@
 ARG UPSTREAM_VERSION
 
-FROM europe-west4-docker.pkg.dev/stakewiselabs/public/v3-operator:${UPSTREAM_VERSION}
+FROM stakewiselabs/v3-operator:${UPSTREAM_VERSION}
 
-RUN mkdir -p /app/data/keystores /app/data/operator /app/data/stakewise
+RUN mkdir -p /app/data
 
-ENV NETWORK=holesky
+ENV NETWORK=holesky DATA_DIR=/app/data
 
 USER root
 
-# Install python3
-RUN apt-get update && apt-get install python3 -y
-
-COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

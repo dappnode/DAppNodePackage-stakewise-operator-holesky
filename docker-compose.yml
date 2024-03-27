@@ -4,13 +4,13 @@ services:
     build:
       context: operator
       args:
-        UPSTREAM_VERSION: v1.0.8
+        UPSTREAM_VERSION: v1.1.0
     restart: unless-stopped
     volumes:
       - "stakewise:/app/data"
     environment:
       - VAULT_CONTRACT_ADDRESS
-      - OPERATOR_WALLET_PASSWORD
-      - KEYSTORES_PASSWORD
+      - VALIDATORS_NUMBER
+      - LOG_LEVEL=INFO
 volumes:
   stakewise: {}

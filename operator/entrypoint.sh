@@ -1,6 +1,10 @@
 #!/bin/sh
 
-# TODO: Allow adding more than 1 keystore (upload compressed file and extract inside keystore dir)
+VAULT_DATA_DIR="$DATA_DIR/$VAULT_CONTRACT_ADDRESS"
+MNEMONIC_PATH="$VAULT_DATA_DIR/mnemonic.txt"
+
+# Ensure NETWORK is lowercase
+NETWORK=$(echo "$NETWORK" | tr '[:upper:]' '[:lower:]')
 
 # NETWORK to upper case
 UPPER_CASE_NETWORK=$(echo "$NETWORK" | tr '[:lower:]' '[:upper:]')
@@ -48,29 +52,46 @@ get_beacon_node_endpoint() {
     esac
 }
 
-# These files need to be uploaded (via setup wizard or restoring backup)
-if [ ! -f "/app/data/operator/wallet.json" ] || [ ! -f "/app/data/operator/deposit_data.json" ] || [ ! -f "/app/data/keystores/keystore.json" ]; then
-    echo "Waiting for files to be uploaded (operator wallet, validator key and deposit files)..."
-    sleep 600
-    exit 1
+if [ -z "$VAULT_CONTRACT_ADDRESS" ]; then
+    echo "[ERROR] VAULT_CONTRACT_ADDRESS is not set. Please set it in the config."
+    exit 0
 fi
 
-# Write keystore password to file
-echo "$KEYSTORES_PASSWORD" >/app/data/keystores/password.txt
+if [ -z $VALIDATORS_NUMBER ]; then
+    echo "[ERROR] VALIDATORS_NUMBER is not set. Please set it in the config."
+    exit 0
+fi
 
-# Write hot wallet password to file
-echo "$OPERATOR_WALLET_PASSWORD" >/app/data/operator/password.txt
+if [ ! -d "$VAULT_DATA_DIR" ]; then
+    echo "[INFO] Initializing operator for $VAULT_CONTRACT_ADDRESS..."
+    MNEMONIC=$(python3 /app/src/main.py init --network $NETWORK --vault $VAULT_CONTRACT_ADDRESS --data-dir $DATA_DIR --language english --no-verify)
+    echo "$MNEMONIC" >$MNEMONIC_PATH
+else
+    echo "[INFO] Operator for $VAULT_CONTRACT_ADDRESS already initialized."
+fi
 
-exec python3 /app/src/main.py start --network ${NETWORK} \
-    --deposit-data-file /app/data/deposit_data.json \
-    --keystores-dir /app/data/keystores \
-    --keystores-password-file /app/data/keystores/password.txt \
-    --hot-wallet-file /app/data/operator/wallet.json \
-    --hot-wallet-password-file /app/data/operator/password.txt \
+if [ ! -f "$VAULT_DATA_DIR/wallet/wallet.json" ]; then
+    echo "[INFO] Creating operator wallet for $VAULT_CONTRACT_ADDRESS..."
+    python3 /app/src/main.py create-wallet --vault $VAULT_CONTRACT_ADDRESS --mnemonic $MNEMONIC_PATH --data-dir $DATA_DIR
+else
+    echo "[INFO] Operator wallet for $VAULT_CONTRACT_ADDRESS already created."
+fi
+
+if [ ! "$(ls -A $VAULT_DATA_DIR/keystores)" ]; then
+    echo "[INFO] Creating validator keys for $VAULT_CONTRACT_ADDRESS..."
+    python3 /app/src/main.py create-keys --vault $VAULT_CONTRACT_ADDRESS --mnemonic $MNEMONIC_PATH --data-dir $DATA_DIR --count $VALIDATORS_NUMBER
+else
+    echo "[INFO] Validator keys for $VAULT_CONTRACT_ADDRESS already created."
+fi
+
+exec python3 /app/src/main.py start \
+    --log-level $LOG_LEVEL \
+    --log-format plain \
     --vault $VAULT_CONTRACT_ADDRESS \
     --execution-endpoints $(get_execution_endpoint) \
     --consensus-endpoints $(get_beacon_node_endpoint) \
-    --data-dir /app/data/stakewise \
+    --enable-metrics \
     --metrics-port 8008 \
     --metrics-host 0.0.0.0 \
-    --verbose
+    --network $NETWORK \
+    --data-dir $DATA_DIR
