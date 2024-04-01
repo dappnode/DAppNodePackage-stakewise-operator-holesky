@@ -101,7 +101,7 @@ get_beacon_node_endpoint() {
     esac
 }
 
-if [ -f "$CONFIG_PATH" ]; then
+if [ -f "$CONFIG_FILE_PATH" ]; then
     echo "[INFO] Operator for $VAULT_CONTRACT_ADDRESS already initialized."
 else
     echo "[INFO] Initializing operator for $VAULT_CONTRACT_ADDRESS..."
