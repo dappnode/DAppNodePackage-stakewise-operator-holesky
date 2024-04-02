@@ -1,52 +1,63 @@
-#!/bin/sh
+#!/bin/bash
 
-set -eu pipefail
+to_lower_case() {
+    echo "$1" | tr '[:upper:]' '[:lower:]'
+}
 
-# Ensure NETWORK and VAULT_CONTRACT_ADDRESS are lowercase
-NETWORK=$(echo "$NETWORK" | tr '[:upper:]' '[:lower:]')
-VAULT_CONTRACT_ADDRESS=$(echo "$VAULT_CONTRACT_ADDRESS" | tr '[:upper:]' '[:lower:]')
+to_upper_case() {
+    echo "$1" | tr '[:lower:]' '[:upper:]'
+}
 
-UPPER_CASE_NETWORK=$(echo "$NETWORK" | tr '[:lower:]' '[:upper:]')
+operator() {
+    python3 /app/src/main.py "$@"
+}
 
-VALIDATORS_NUMBER_PATH="$DATA_DIR/validators_number.txt"
-MNEMONIC_PATH="$MNEMONIC_DIR/mnemonic.txt"
-VAULT_CONTRACT_ADDRESS_PATH="$DATA_DIR/vault_contract_address.txt"
+load_envs() {
+    NETWORK=$(to_lower_case "$NETWORK")
+    UPPER_CASE_NETWORK=$(to_upper_case "$NETWORK")
 
-if [ -n "$VAULT_CONTRACT_ADDRESS" ]; then
-    echo "$VAULT_CONTRACT_ADDRESS" >$VAULT_CONTRACT_ADDRESS_PATH
-else
-    VAULT_CONTRACT_ADDRESS=$(cat $VAULT_CONTRACT_ADDRESS_PATH | tr '[:upper:]' '[:lower:]')
-fi
+    VALIDATORS_NUMBER_PATH="$DATA_DIR/validators_number.txt"
+    MNEMONIC_PATH="$MNEMONIC_DIR/mnemonic.txt"
+    VAULT_CONTRACT_ADDRESS_PATH="$DATA_DIR/vault_contract_address.txt"
 
-if [ -z "$VAULT_CONTRACT_ADDRESS" ]; then
-    echo "[ERROR] VAULT_CONTRACT_ADDRESS is not set. Please set it in the config and click update."
-    exit 0
-fi
+    load_env_and_store_to_file "VAULT_CONTRACT_ADDRESS" "$VAULT_CONTRACT_ADDRESS_PATH"
+    load_env_and_store_to_file "VALIDATORS_NUMBER" "$VALIDATORS_NUMBER_PATH"
 
-echo "[INFO] Loading operator with vault contract address: $VAULT_CONTRACT_ADDRESS..."
+    VAULT_CONTRACT_ADDRESS=$(to_lower_case "$VAULT_CONTRACT_ADDRESS")
 
-if [ -n "$VALIDATORS_NUMBER" ]; then
-    echo "$VALIDATORS_NUMBER" >$VALIDATORS_NUMBER_PATH
-else
-    VALIDATORS_NUMBER=$(cat $VALIDATORS_NUMBER_PATH)
-fi
+    VAULT_DATA_DIR="$DATA_DIR/$VAULT_CONTRACT_ADDRESS"
+    KEYSTORES_DIR="$VAULT_DATA_DIR/keystores"
+    DEPOSIT_DATA_FILE_PATH="$VAULT_DATA_DIR/deposit_data.json"
+    CONFIG_FILE_PATH="$VAULT_DATA_DIR/config.json"
+    WALLET_FILE_PATH="$VAULT_DATA_DIR/wallet/wallet.json"
+}
 
-if [ -z $VALIDATORS_NUMBER ]; then
-    echo "[ERROR] VALIDATORS_NUMBER is not set. Please set it in the config and click update."
-    exit 0
-fi
+load_env_and_store_to_file() {
+    local var_name="$1"
+    local file_path="$2"
 
-echo "[INFO] Loading operator for $VALIDATORS_NUMBER validators..."
+    if [ -n "${!var_name}" ]; then
+        echo "${!var_name}" >"$file_path"
+    else
+        if [ -f "$file_path" ]; then
+            read -r value <"$file_path"
+            declare -g "$var_name"=$(to_lower_case "$value")
+        fi
+    fi
 
-VAULT_DATA_DIR="$DATA_DIR/$VAULT_CONTRACT_ADDRESS"
-KEYSTORES_DIR="$VAULT_DATA_DIR/keystores"
-DEPOSIT_DATA_FILE_PATH="$VAULT_DATA_DIR/deposit_data.json"
-CONFIG_FILE_PATH="$VAULT_DATA_DIR/config.json"
-WALLET_FILE_PATH="$VAULT_DATA_DIR/wallet/wallet.json"
+    if [ -z "${!var_name}" ]; then
+        echo "[ERROR] $var_name is not set. Please set it in the config and click update or upload a backup."
+        echo "[INFO] Waiting 5 minutes before exiting..."
+        sleep 300
+        exit 0
+    fi
 
-mkdir -p $VAULT_DATA_DIR
+    echo "[INFO] Loaded variable $var_name: ${!var_name}"
+}
 
-echo "[INFO] Loaded variables: VAULT_CONTRACT_ADDRESS=$VAULT_CONTRACT_ADDRESS, VALIDATORS_NUMBER=$VALIDATORS_NUMBER, VAULT_DATA_DIR=$VAULT_DATA_DIR"
+create_directories() {
+    mkdir -p $DATA_DIR $MNEMONIC_DIR $DATABASE_DIR $VAULT_DATA_DIR
+}
 
 get_execution_endpoint() {
     execution_client_var_name="_DAPPNODE_GLOBAL_EXECUTION_CLIENT_${UPPER_CASE_NETWORK}"
@@ -101,84 +112,109 @@ get_beacon_node_endpoint() {
     esac
 }
 
-if [ -f "$CONFIG_FILE_PATH" ]; then
-    echo "[INFO] Operator for $VAULT_CONTRACT_ADDRESS already initialized."
-else
-    echo "[INFO] Initializing operator for $VAULT_CONTRACT_ADDRESS..."
-    # This command creates the config.json file and the mnemonic
-    MNEMONIC=$(python3 /app/src/main.py init --network $NETWORK --vault $VAULT_CONTRACT_ADDRESS --data-dir $DATA_DIR --language english --no-verify)
+init_operator() {
 
-    echo "$MNEMONIC" >$MNEMONIC_PATH
-fi
-
-# This is the mnemonic for both the keystore and the wallet
-MNEMONIC=$(cat $MNEMONIC_PATH)
-
-if [ -f "$WALLET_FILE_PATH" ]; then
-    echo "[INFO] Operator wallet for $VAULT_CONTRACT_ADDRESS already created."
-else
-    echo "[INFO] Creating operator wallet for $VAULT_CONTRACT_ADDRESS..."
-    python3 /app/src/main.py create-wallet --vault $VAULT_CONTRACT_ADDRESS --mnemonic "$MNEMONIC" --data-dir $DATA_DIR
-fi
-
-# Get the number of files inside the keystores directory that follow the pattern "keystore-*.json"
-KEY_FILES_COUNT=$(ls -1 $KEYSTORES_DIR/keystore-*.json 2>/dev/null | wc -l)
-
-# Check if the number of files is equal to the number of validators
-if [ $KEY_FILES_COUNT -eq $VALIDATORS_NUMBER ]; then
-    echo "[INFO] The number of validator keys matches the defined number of validators: $VALIDATORS_NUMBER."
-
-elif [! -f "$MNEMONIC_PATH" ]; then
-    echo "[ERROR] Mnemonic file not found at $MNEMONIC_PATH. Validator keys cannot be created. Upload the backup with the mnemonic file."
-
-else
-    echo "[INFO] The number of validator keys does not match the defined number of validators: $VALIDATORS_NUMBER."
-
-    VALIDATORS_TO_CREATE=$(($VALIDATORS_NUMBER - $KEY_FILES_COUNT))
-
-    if [ $VALIDATORS_TO_CREATE -lt 0 ]; then
-        echo "[ERROR] It is not possible to remove existing keystores"
-
-    elif [ $KEY_FILES_COUNT -eq 0 ]; then
-        echo "[INFO] Creating validator keys for $VAULT_CONTRACT_ADDRESS..."
-        python3 /app/src/main.py create-keys --vault $VAULT_CONTRACT_ADDRESS --mnemonic "$MNEMONIC" --data-dir $DATA_DIR --count $VALIDATORS_TO_CREATE
-
+    if [ -f "$CONFIG_FILE_PATH" ]; then
+        echo "[INFO] Operator for $VAULT_CONTRACT_ADDRESS already initialized."
     else
-        echo "[INFO] Creating $VALIDATORS_TO_CREATE validator keys..."
-        mv $VAULT_DATA_DIR/deposit_data.json $VAULT_DATA_DIR/deposit_data.json_old.json
+        echo "[INFO] Initializing operator for $VAULT_CONTRACT_ADDRESS..."
+        # This command creates the config.json file and the mnemonic
+        MNEMONIC=$(operator init --network "$NETWORK" --vault "$VAULT_CONTRACT_ADDRESS" --data-dir "$DATA_DIR" --language english --no-verify)
 
-        python3 /app/src/main.py create-keys --vault $VAULT_CONTRACT_ADDRESS --mnemonic "$MNEMONIC" --data-dir $DATA_DIR --count $VALIDATORS_TO_CREATE
-        mv $VAULT_DATA_DIR/deposit_data.json $VAULT_DATA_DIR/deposit_data.json_new.json
-
-        python3 /app/src/main.py merge-deposit-data -d $VAULT_DATA_DIR/deposit_data_old.json -d $VAULT_DATA_DIR/deposit_data_new.json -m $VAULT_DATA_DIR/deposit_data.json
+        echo "$MNEMONIC" >"$MNEMONIC_PATH"
     fi
 
-fi
+    # This is the mnemonic for both the keystore and the wallet
+    MNEMONIC=$(cat "$MNEMONIC_PATH")
+}
 
-# Read JSON from PRIVATE_KEY_FILE and extract the publicKey
-WALLET_ADDRESS=$(jq -r '.address' ${WALLET_FILE_PATH})
+create_wallet() {
+    if [ -f "$WALLET_FILE_PATH" ]; then
+        echo "[INFO] Operator wallet for $VAULT_CONTRACT_ADDRESS already created."
+    else
+        echo "[INFO] Creating operator wallet for $VAULT_CONTRACT_ADDRESS..."
+        operator create-wallet --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$DATA_DIR"
+    fi
+}
 
-# Post ENR to dappmanager
-curl --connect-timeout 5 \
-    --max-time 10 \
-    --silent \
-    --retry 5 \
-    --retry-delay 0 \
-    --retry-max-time 40 \
-    -X POST "http://dappmanager.dappnode/data-send?key=Hot%20Wallet%20Address&data=${WALLET_ADDRESS}" ||
-    {
-        echo -e "[ERROR] failed to post hot wallet address to dappmanager\n"
-    }
+create_validators() {
+    # Get the number of files inside the keystores directory that follow the pattern "keystore-*.json"
+    KEY_FILES_COUNT=$(ls -1 $KEYSTORES_DIR/keystore-*.json 2>/dev/null | wc -l)
 
-exec python3 /app/src/main.py start \
-    --log-level $LOG_LEVEL \
-    --log-format plain \
-    --vault $VAULT_CONTRACT_ADDRESS \
-    --execution-endpoints $(get_execution_endpoint) \
-    --consensus-endpoints $(get_beacon_node_endpoint) \
-    --enable-metrics \
-    --metrics-port 8008 \
-    --metrics-host 0.0.0.0 \
-    --network $NETWORK \
-    --data-dir $DATA_DIR \
-    --database-dir $DATABASE_DIR
+    # Check if the number of files is equal to the number of validators
+    if [ $KEY_FILES_COUNT -eq $VALIDATORS_NUMBER ]; then
+        echo "[INFO] The number of validator keys matches the defined number of validators: $VALIDATORS_NUMBER."
+
+    elif [ ! -f "$MNEMONIC_PATH" ]; then
+        echo "[ERROR] Mnemonic file not found at $MNEMONIC_PATH. Validator keys cannot be created. Upload the backup with the mnemonic file."
+
+    else
+        echo "[INFO] The number of validator keys ($KEY_FILES_COUNT) does not match the defined number of validators: $VALIDATORS_NUMBER."
+
+        VALIDATORS_TO_CREATE=$(($VALIDATORS_NUMBER - $KEY_FILES_COUNT))
+
+        if [ $VALIDATORS_TO_CREATE -lt 0 ]; then
+            echo "[ERROR] It is not possible to remove existing keystores"
+
+        elif [ $KEY_FILES_COUNT -eq 0 ]; then
+            echo "[INFO] Creating validator keys for $VAULT_CONTRACT_ADDRESS..."
+            operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$DATA_DIR" --count $VALIDATORS_TO_CREATE
+
+        else
+            echo "[INFO] Creating $VALIDATORS_TO_CREATE validator keys..."
+            mv $VAULT_DATA_DIR/deposit_data.json $VAULT_DATA_DIR/deposit_data_old.json
+
+            operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$DATA_DIR" --count $VALIDATORS_TO_CREATE
+            mv $VAULT_DATA_DIR/deposit_data.json $VAULT_DATA_DIR/deposit_data_new.json
+
+            operator merge-deposit-data -d "$VAULT_DATA_DIR/deposit_data_old.json" -d "$VAULT_DATA_DIR/deposit_data_new.json" -m "$VAULT_DATA_DIR/deposit_data.json"
+        fi
+
+    fi
+}
+
+post_wallet_address_to_dappmanager() {
+    # Read JSON from PRIVATE_KEY_FILE and extract the publicKey
+    WALLET_ADDRESS=$(jq -r '.address' ${WALLET_FILE_PATH})
+
+    # Post ENR to dappmanager
+    curl --connect-timeout 5 \
+        --max-time 10 \
+        --silent \
+        --retry 5 \
+        --retry-delay 0 \
+        --retry-max-time 40 \
+        -X POST "http://dappmanager.dappnode/data-send?key=Hot%20Wallet%20Address&data=${WALLET_ADDRESS}" ||
+        {
+            echo -e "[ERROR] failed to post hot wallet address to dappmanager\n"
+        }
+}
+
+start_operator() {
+    echo "[INFO] Starting operator for $VAULT_CONTRACT_ADDRESS..."
+
+    exec python3 /app/src/main.py start \
+        --log-level $LOG_LEVEL \
+        --log-format plain \
+        --vault $VAULT_CONTRACT_ADDRESS \
+        --execution-endpoints $(get_execution_endpoint) \
+        --consensus-endpoints $(get_beacon_node_endpoint) \
+        --enable-metrics \
+        --metrics-port 8008 \
+        --metrics-host 0.0.0.0 \
+        --network $NETWORK \
+        --data-dir $DATA_DIR \
+        --database-dir $DATABASE_DIR
+}
+
+main() {
+    load_envs
+    create_directories
+    init_operator
+    create_wallet
+    create_validators
+    post_wallet_address_to_dappmanager
+    start_operator
+}
+
+main
