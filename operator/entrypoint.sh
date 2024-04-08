@@ -30,6 +30,16 @@ load_envs() {
     DEPOSIT_DATA_FILE_PATH="$VAULT_DATA_DIR/deposit_data.json"
     CONFIG_FILE_PATH="$VAULT_DATA_DIR/config.json"
     WALLET_FILE_PATH="$VAULT_DATA_DIR/wallet/wallet.json"
+
+    EXECUTION_ENDPOINT=$(get_execution_endpoint)
+    BEACON_NODE_ENDPOINT=$(get_beacon_node_endpoint)
+
+    if [ "$NETWORK" = "mainnet" ]; then
+        BRAIN_URL="http://brain.web3signer.dappnode:3000"
+    else
+        BRAIN_URL="http://brain.web3signer-$NETWORK.dappnode:3000"
+    fi
+
 }
 
 load_env_and_store_to_file() {
@@ -190,6 +200,20 @@ post_wallet_address_to_dappmanager() {
         }
 }
 
+upload_keystores_to_brain() {
+    echo "[INFO] Uploading keystores to brain..."
+
+    if ! operator remote-signer-setup \
+        --data-dir $DATA_DIR \
+        --vault $VAULT_CONTRACT_ADDRESS \
+        --remote-signer-url "$BRAIN_URL" \
+        --dappnode \
+        --execution-endpoints $EXECUTION_ENDPOINT; then
+        echo "[ERROR] Failed to upload keystores to brain."
+        exit 1
+    fi
+}
+
 start_operator() {
     echo "[INFO] Starting operator for $VAULT_CONTRACT_ADDRESS..."
 
@@ -197,8 +221,8 @@ start_operator() {
         --log-level $LOG_LEVEL \
         --log-format plain \
         --vault $VAULT_CONTRACT_ADDRESS \
-        --execution-endpoints $(get_execution_endpoint) \
-        --consensus-endpoints $(get_beacon_node_endpoint) \
+        --execution-endpoints $EXECUTION_ENDPOINT \
+        --consensus-endpoints $BEACON_NODE_ENDPOINT \
         --enable-metrics \
         --metrics-port 8008 \
         --metrics-host 0.0.0.0 \
@@ -214,6 +238,7 @@ main() {
     create_wallet
     create_validators
     post_wallet_address_to_dappmanager
+    upload_keystores_to_brain
     start_operator
 }
 

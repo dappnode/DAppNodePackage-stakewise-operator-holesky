@@ -2,7 +2,7 @@
 
 Welcome to the StakeWise Operator Package for DAppNode! This comprehensive guide assists you in setting up and running a StakeWise operator node on your DAppNode device effortlessly.
 
-**Become a StakeWise Operator in Simple Steps:**
+## **Become a StakeWise Operator:**
 
 1. **Create Your Vault:** Begin by creating your vault on the StakeWise platform. Visit [StakeWise Operator Setup](https://app.stakewise.io/operate?networkId=holesky) to get started.
 
@@ -31,8 +31,7 @@ Welcome to the StakeWise Operator Package for DAppNode! This comprehensive guide
 
 **Congratulations!** You are now set to operate your StakeWise vault on Dappnode.
 
-<!--
-**Add more validators to your current operator:**
+## **Add more validators to your current operator:**
 
 1. **Upload your mnemonic:** If you have removed the mnemonic volume, you must download the backup file from the [StakeWise Backup tab](http://my.dappnode/packages/my/stakewise-operator-holesky.dnp.dappnode.eth/backup), input the mnemonic into the file `/data/mnemonic/mnemonic.txt` and upload it back to the StakeWise Operator package.
 
@@ -44,5 +43,3 @@ Welcome to the StakeWise Operator Package for DAppNode! This comprehensive guide
 
 5. **Remove the mnemonic volume:** For enhanced security, remove the mnemonic volume associated with your StakeWise Operator package. This can be done at [StakeWise Operator Info](http://my.dappnode/packages/my/stakewise-operator-holesky.dnp.dappnode.eth/info).
    - **Remove only** the volume labeled as **"mnemonic"**.
-
--->
