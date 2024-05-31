@@ -127,6 +127,12 @@ init_operator() {
     if [ -f "$CONFIG_FILE_PATH" ]; then
         echo "[INFO] Operator for $VAULT_CONTRACT_ADDRESS already initialized."
     else
+
+        if [ -d "$VAULT_DATA_DIR" ] && [ ! "$(ls -A $VAULT_DATA_DIR)" ]; then
+            echo "[INFO] Removing empty directory $VAULT_DATA_DIR"
+            rm -r "$VAULT_DATA_DIR"
+        fi
+
         echo "[INFO] Initializing operator for $VAULT_CONTRACT_ADDRESS..."
         # This command creates the config.json file and the mnemonic
         MNEMONIC=$(operator init --network "$NETWORK" --vault "$VAULT_CONTRACT_ADDRESS" --data-dir "$DATA_DIR" --language english --no-verify)
