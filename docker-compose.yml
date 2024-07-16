@@ -5,15 +5,18 @@ services:
       context: operator
       args:
         UPSTREAM_VERSION: v1.3.2
+        DATA_DIR: /app/data
     restart: unless-stopped
     volumes:
-      - stakewise:/app/data/stakewise
-      - mnemonic:/app/data/mnemonic
+      - database:/app/data/database
+      - stakewise:/app/data/config/stakewise
+      - mnemonic:/app/data/config/mnemonic
     environment:
       - VAULT_CONTRACT_ADDRESS
       - VALIDATORS_NUMBER
       - LOG_LEVEL=INFO
     image: operator.stakewise-operator-holesky.dnp.dappnode.eth:0.1.0
 volumes:
+  database: {}
   stakewise: {}
   mnemonic: {}
