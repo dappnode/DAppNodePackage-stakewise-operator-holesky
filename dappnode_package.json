@@ -25,8 +25,8 @@
   ],
   "backup": [
     {
-      "name": "data",
-      "path": "/app/data",
+      "name": "operator-config",
+      "path": "/app/data/config",
       "service": "operator"
     }
   ]

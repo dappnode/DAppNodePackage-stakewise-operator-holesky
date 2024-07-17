@@ -13,21 +13,25 @@ operator() {
 }
 
 load_envs() {
+    DATABASE_DIR=${DATA_DIR}/database
+    CONFIG_DIR=${DATA_DIR}/config
+    STAKEWISE_DIR=${CONFIG_DIR}/stakewise
+    MNEMONIC_DIR=${CONFIG_DIR}/mnemonic
+
     NETWORK=$(to_lower_case "$NETWORK")
     UPPER_CASE_NETWORK=$(to_upper_case "$NETWORK")
 
-    VALIDATORS_NUMBER_PATH="$DATA_DIR/validators_number.txt"
+    VALIDATORS_NUMBER_PATH="$STAKEWISE_DIR/validators_number.txt"
     MNEMONIC_PATH="$MNEMONIC_DIR/mnemonic.txt"
-    VAULT_CONTRACT_ADDRESS_PATH="$DATA_DIR/vault_contract_address.txt"
+    VAULT_CONTRACT_ADDRESS_PATH="$STAKEWISE_DIR/vault_contract_address.txt"
 
     load_env_and_store_to_file "VAULT_CONTRACT_ADDRESS" "$VAULT_CONTRACT_ADDRESS_PATH"
     load_env_and_store_to_file "VALIDATORS_NUMBER" "$VALIDATORS_NUMBER_PATH"
 
     VAULT_CONTRACT_ADDRESS=$(to_lower_case "$VAULT_CONTRACT_ADDRESS")
 
-    VAULT_DATA_DIR="$DATA_DIR/$VAULT_CONTRACT_ADDRESS"
+    VAULT_DATA_DIR="$STAKEWISE_DIR/$VAULT_CONTRACT_ADDRESS"
     KEYSTORES_DIR="$VAULT_DATA_DIR/keystores"
-    DEPOSIT_DATA_FILE_PATH="$VAULT_DATA_DIR/deposit_data.json"
     CONFIG_FILE_PATH="$VAULT_DATA_DIR/config.json"
     WALLET_FILE_PATH="$VAULT_DATA_DIR/wallet/wallet.json"
 
@@ -66,7 +70,7 @@ load_env_and_store_to_file() {
 }
 
 create_directories() {
-    mkdir -p $DATA_DIR $MNEMONIC_DIR $DATABASE_DIR $VAULT_DATA_DIR
+    mkdir -p $STAKEWISE_DIR $MNEMONIC_DIR $DATABASE_DIR $VAULT_DATA_DIR
 }
 
 get_execution_endpoint() {
@@ -135,7 +139,7 @@ init_operator() {
 
         echo "[INFO] Initializing operator for $VAULT_CONTRACT_ADDRESS..."
         # This command creates the config.json file and the mnemonic
-        MNEMONIC=$(operator init --network "$NETWORK" --vault "$VAULT_CONTRACT_ADDRESS" --data-dir "$DATA_DIR" --language english --no-verify)
+        MNEMONIC=$(operator init --network "$NETWORK" --vault "$VAULT_CONTRACT_ADDRESS" --data-dir "$STAKEWISE_DIR" --language english --no-verify)
 
         echo "$MNEMONIC" >"$MNEMONIC_PATH"
     fi
@@ -149,7 +153,7 @@ create_wallet() {
         echo "[INFO] Operator wallet for $VAULT_CONTRACT_ADDRESS already created."
     else
         echo "[INFO] Creating operator wallet for $VAULT_CONTRACT_ADDRESS..."
-        operator create-wallet --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$DATA_DIR"
+        operator create-wallet --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$STAKEWISE_DIR"
     fi
 }
 
@@ -174,13 +178,13 @@ create_validators() {
 
         elif [ $KEY_FILES_COUNT -eq 0 ]; then
             echo "[INFO] Creating validator keys for $VAULT_CONTRACT_ADDRESS..."
-            operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$DATA_DIR" --count $VALIDATORS_TO_CREATE
+            operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$STAKEWISE_DIR" --count $VALIDATORS_TO_CREATE
 
         else
             echo "[INFO] Creating $VALIDATORS_TO_CREATE validator keys..."
             mv $VAULT_DATA_DIR/deposit_data.json $VAULT_DATA_DIR/deposit_data_old.json
 
-            operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$DATA_DIR" --count $VALIDATORS_TO_CREATE
+            operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$STAKEWISE_DIR" --count $VALIDATORS_TO_CREATE
             mv $VAULT_DATA_DIR/deposit_data.json $VAULT_DATA_DIR/deposit_data_new.json
 
             operator merge-deposit-data -d "$VAULT_DATA_DIR/deposit_data_old.json" -d "$VAULT_DATA_DIR/deposit_data_new.json" -m "$VAULT_DATA_DIR/deposit_data.json"
@@ -210,7 +214,7 @@ upload_keystores_to_brain() {
     echo "[INFO] Uploading keystores to brain..."
 
     if ! operator remote-signer-setup \
-        --data-dir $DATA_DIR \
+        --data-dir $STAKEWISE_DIR \
         --vault $VAULT_CONTRACT_ADDRESS \
         --remote-signer-url "$BRAIN_URL" \
         --dappnode \
@@ -233,7 +237,7 @@ start_operator() {
         --metrics-port 8008 \
         --metrics-host 0.0.0.0 \
         --network $NETWORK \
-        --data-dir $DATA_DIR \
+        --data-dir $STAKEWISE_DIR \
         --database-dir $DATABASE_DIR
 }
 
