@@ -1,11 +1,14 @@
 {
-  "name": "stakewise-operator-holesky.dnp.dappnode.eth",
-  "version": "0.1.0",
   "upstream": [
     {
       "repo": "stakewise/v3-operator",
       "version": "v1.3.2",
       "arg": "UPSTREAM_VERSION"
+    },
+    {
+      "repo": "dappnode/staker-package-scripts",
+      "version": "v0.1.0",
+      "arg": "STAKER_SCRIPTS_VERSION"
     }
   ],
   "description": "StakeWise V3 allows anyone who is capable of running Ethereum validators to participate in liquid staking and receive staking delegations from others.",
@@ -17,12 +20,6 @@
     "homepage": "https://stakewise.io/#home"
   },
   "license": "GPL-3.0",
-  "globalEnvs": [
-    {
-      "envs": ["CONSENSUS_CLIENT_HOLESKY", "EXECUTION_CLIENT_HOLESKY"],
-      "services": ["operator"]
-    }
-  ],
   "backup": [
     {
       "name": "operator-config",

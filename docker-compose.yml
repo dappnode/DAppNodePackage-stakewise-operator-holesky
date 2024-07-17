@@ -5,6 +5,7 @@ services:
       context: operator
       args:
         UPSTREAM_VERSION: v1.3.2
+        STAKER_SCRIPTS_VERSION: v0.1.0
         DATA_DIR: /app/data
     restart: unless-stopped
     volumes:
@@ -15,7 +16,7 @@ services:
       - VAULT_CONTRACT_ADDRESS
       - VALIDATORS_NUMBER
       - LOG_LEVEL=INFO
-    image: operator.stakewise-operator-holesky.dnp.dappnode.eth:0.1.0
+      - EXTRA_OPTS
 volumes:
   database: {}
   stakewise: {}
