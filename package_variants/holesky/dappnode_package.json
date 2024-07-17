@@ -1,0 +1,10 @@
+{
+  "name": "stakewise-operator-holesky.dnp.dappnode.eth",
+  "version": "0.1.0",
+  "globalEnvs": [
+    {
+      "envs": ["CONSENSUS_CLIENT_HOLESKY", "EXECUTION_CLIENT_HOLESKY"],
+      "services": ["operator"]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+services:
+  operator:
+    build:
+      context: operator
+      args:
+        NETWORK: mainnet

@@ -1,0 +1,10 @@
+{
+  "name": "stakewise-operator.dnp.dappnode.eth",
+  "version": "0.1.0",
+  "globalEnvs": [
+    {
+      "envs": ["CONSENSUS_CLIENT_MAINNET", "EXECUTION_CLIENT_MAINNET"],
+      "services": ["operator"]
+    }
+  ]
+}

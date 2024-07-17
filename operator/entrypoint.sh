@@ -1,12 +1,7 @@
 #!/bin/bash
 
-to_lower_case() {
-    echo "$1" | tr '[:upper:]' '[:lower:]'
-}
-
-to_upper_case() {
-    echo "$1" | tr '[:lower:]' '[:upper:]'
-}
+# shellcheck disable=SC1091 # Path is relative to the Dockerfile
+. /etc/profile.d/dvt_lsd_tools.sh
 
 operator() {
     python3 /app/src/main.py "$@"
@@ -18,9 +13,6 @@ load_envs() {
     STAKEWISE_DIR=${CONFIG_DIR}/stakewise
     MNEMONIC_DIR=${CONFIG_DIR}/mnemonic
 
-    NETWORK=$(to_lower_case "$NETWORK")
-    UPPER_CASE_NETWORK=$(to_upper_case "$NETWORK")
-
     VALIDATORS_NUMBER_PATH="$STAKEWISE_DIR/validators_number.txt"
     MNEMONIC_PATH="$MNEMONIC_DIR/mnemonic.txt"
     VAULT_CONTRACT_ADDRESS_PATH="$STAKEWISE_DIR/vault_contract_address.txt"
@@ -28,6 +20,8 @@ load_envs() {
     load_env_and_store_to_file "VAULT_CONTRACT_ADDRESS" "$VAULT_CONTRACT_ADDRESS_PATH"
     load_env_and_store_to_file "VALIDATORS_NUMBER" "$VALIDATORS_NUMBER_PATH"
 
+    SUPPORTED_NETWORKS="mainnet holesky"
+    NETWORK=$(to_lower_case "$NETWORK")
     VAULT_CONTRACT_ADDRESS=$(to_lower_case "$VAULT_CONTRACT_ADDRESS")
 
     VAULT_DATA_DIR="$STAKEWISE_DIR/$VAULT_CONTRACT_ADDRESS"
@@ -35,15 +29,9 @@ load_envs() {
     CONFIG_FILE_PATH="$VAULT_DATA_DIR/config.json"
     WALLET_FILE_PATH="$VAULT_DATA_DIR/wallet/wallet.json"
 
-    EXECUTION_ENDPOINT=$(get_execution_endpoint)
-    BEACON_NODE_ENDPOINT=$(get_beacon_node_endpoint)
-
-    if [ "$NETWORK" = "mainnet" ]; then
-        BRAIN_URL="http://brain.web3signer.dappnode:3000"
-    else
-        BRAIN_URL="http://brain.web3signer-$NETWORK.dappnode:3000"
-    fi
-
+    export_execution_rpc_api_url "$NETWORK" "$SUPPORTED_NETWORKS"
+    export_beacon_api_url "$NETWORK" "$SUPPORTED_NETWORKS"
+    export_brain_url "$NETWORK" "$SUPPORTED_NETWORKS"
 }
 
 load_env_and_store_to_file() {
@@ -70,60 +58,7 @@ load_env_and_store_to_file() {
 }
 
 create_directories() {
-    mkdir -p $STAKEWISE_DIR $MNEMONIC_DIR $DATABASE_DIR $VAULT_DATA_DIR
-}
-
-get_execution_endpoint() {
-    execution_client_var_name="_DAPPNODE_GLOBAL_EXECUTION_CLIENT_${UPPER_CASE_NETWORK}"
-
-    # Use eval to dynamically get the variable's value
-    execution_client=$(eval echo \$$execution_client_var_name)
-
-    case $execution_client in
-    "${NETWORK}-geth.dnp.dappnode.eth")
-        echo "http://${NETWORK}-geth.dappnode:8545"
-        ;;
-    "${NETWORK}-nethermind.dnp.dappnode.eth")
-        echo "http://${NETWORK}-nethermind.dappnode:8545"
-        ;;
-    "${NETWORK}-besu.dnp.dappnode.eth")
-        echo "http://${NETWORK}-besu.dappnode:8545"
-        ;;
-    "${NETWORK}-erigon.dnp.dappnode.eth")
-        echo "http://${NETWORK}-erigon.dappnode:8545"
-        ;;
-    *)
-        echo "$execution_client"
-        ;;
-    esac
-}
-
-get_beacon_node_endpoint() {
-    consensus_client_var_name="_DAPPNODE_GLOBAL_CONSENSUS_CLIENT_${UPPER_CASE_NETWORK}"
-
-    # Use eval to dynamically get the variable's value
-    consensus_client=$(eval echo \$$consensus_client_var_name)
-
-    case $consensus_client in
-    "prysm-${NETWORK}.dnp.dappnode.eth")
-        echo "http://beacon-chain.prysm-${NETWORK}.dappnode:3500"
-        ;;
-    "teku-${NETWORK}.dnp.dappnode.eth")
-        echo "http://beacon-chain.teku-${NETWORK}.dappnode:3500"
-        ;;
-    "lighthouse-${NETWORK}.dnp.dappnode.eth")
-        echo "http://beacon-chain.lighthouse-${NETWORK}.dappnode:3500"
-        ;;
-    "nimbus-${NETWORK}.dnp.dappnode.eth")
-        echo "http://beacon-validator.nimbus-${NETWORK}.dappnode:4500"
-        ;;
-    "lodestar-${NETWORK}.dnp.dappnode.eth")
-        echo "http://beacon-chain.lodestar-${NETWORK}.dappnode:3500"
-        ;;
-    *)
-        echo "$consensus_client"
-        ;;
-    esac
+    mkdir -p "$STAKEWISE_DIR" "$MNEMONIC_DIR" "$DATABASE_DIR" "$VAULT_DATA_DIR"
 }
 
 init_operator() {
@@ -151,51 +86,63 @@ init_operator() {
 create_wallet() {
     if [ -f "$WALLET_FILE_PATH" ]; then
         echo "[INFO] Operator wallet for $VAULT_CONTRACT_ADDRESS already created."
-    else
-        echo "[INFO] Creating operator wallet for $VAULT_CONTRACT_ADDRESS..."
-        operator create-wallet --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$STAKEWISE_DIR"
+        return
     fi
+
+    echo "[INFO] Creating operator wallet for $VAULT_CONTRACT_ADDRESS..."
+    operator create-wallet --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$STAKEWISE_DIR"
 }
 
-create_validators() {
+ensure_number_of_validators() {
+    local key_files_count
+
     # Get the number of files inside the keystores directory that follow the pattern "keystore-*.json"
-    KEY_FILES_COUNT=$(ls -1 $KEYSTORES_DIR/keystore-*.json 2>/dev/null | wc -l)
+    key_files_count=$(ls -1 $KEYSTORES_DIR/keystore-*.json 2>/dev/null | wc -l)
 
     # Check if the number of files is equal to the number of validators
-    if [ $KEY_FILES_COUNT -eq $VALIDATORS_NUMBER ]; then
+    if [ $key_files_count -eq $VALIDATORS_NUMBER ]; then
         echo "[INFO] The number of validator keys matches the defined number of validators: $VALIDATORS_NUMBER."
-
-    elif [ ! -f "$MNEMONIC_PATH" ]; then
-        echo "[ERROR] Mnemonic file not found at $MNEMONIC_PATH. Validator keys cannot be created. Upload the backup with the mnemonic file."
-
-    else
-        echo "[INFO] The number of validator keys ($KEY_FILES_COUNT) does not match the defined number of validators: $VALIDATORS_NUMBER."
-
-        VALIDATORS_TO_CREATE=$(($VALIDATORS_NUMBER - $KEY_FILES_COUNT))
-
-        if [ $VALIDATORS_TO_CREATE -lt 0 ]; then
-            echo "[ERROR] It is not possible to remove existing keystores"
-
-        elif [ $KEY_FILES_COUNT -eq 0 ]; then
-            echo "[INFO] Creating validator keys for $VAULT_CONTRACT_ADDRESS..."
-            operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$STAKEWISE_DIR" --count $VALIDATORS_TO_CREATE
-
-        else
-            echo "[INFO] Creating $VALIDATORS_TO_CREATE validator keys..."
-            mv $VAULT_DATA_DIR/deposit_data.json $VAULT_DATA_DIR/deposit_data_old.json
-
-            operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$STAKEWISE_DIR" --count $VALIDATORS_TO_CREATE
-            mv $VAULT_DATA_DIR/deposit_data.json $VAULT_DATA_DIR/deposit_data_new.json
-
-            operator merge-deposit-data -d "$VAULT_DATA_DIR/deposit_data_old.json" -d "$VAULT_DATA_DIR/deposit_data_new.json" -m "$VAULT_DATA_DIR/deposit_data.json"
-        fi
-
+        return
     fi
+
+    if [ ! -f "$MNEMONIC_PATH" ]; then
+        echo "[ERROR] Mnemonic file not found at $MNEMONIC_PATH. Validator keys cannot be created. Upload the backup with the mnemonic file."
+        return
+    fi
+
+    echo "[INFO] The number of validator keys ($key_files_count) does not match the defined number of validators: $VALIDATORS_NUMBER."
+    _create_validators "$key_files_count"
+}
+
+_create_validators() {
+    local key_files_count=$1
+    local validators_to_create=$(($VALIDATORS_NUMBER - $key_files_count))
+
+    if [ $validators_to_create -lt 0 ]; then
+        # TODO: Allow it?
+        echo "[ERROR] It is not possible to remove existing keystores"
+        return 1
+    fi
+
+    if [ $key_files_count -eq 0 ]; then
+        echo "[INFO] Creating validator keys for $VAULT_CONTRACT_ADDRESS..."
+        operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$STAKEWISE_DIR" --count $validators_to_create
+        return 0
+    fi
+
+    echo "[INFO] Creating $validators_to_create validator keys..."
+    mv -f "${VAULT_DATA_DIR}/deposit_data.json" "${VAULT_DATA_DIR}/deposit_data_old.json"
+
+    operator create-keys --vault "$VAULT_CONTRACT_ADDRESS" --mnemonic "$MNEMONIC" --data-dir "$STAKEWISE_DIR" --count $validators_to_create
+    mv -f "${VAULT_DATA_DIR}/deposit_data.json" "${VAULT_DATA_DIR}/deposit_data_new.json"
+
+    operator merge-deposit-data -d "$VAULT_DATA_DIR/deposit_data_old.json" -d "$VAULT_DATA_DIR/deposit_data_new.json" -m "$VAULT_DATA_DIR/deposit_data.json"
+
 }
 
 post_wallet_address_to_dappmanager() {
     # Read JSON from PRIVATE_KEY_FILE and extract the publicKey
-    WALLET_ADDRESS=$(jq -r '.address' ${WALLET_FILE_PATH})
+    WALLET_ADDRESS=$(jq -r '.address' "${WALLET_FILE_PATH}")
 
     # Post ENR to dappmanager
     curl --connect-timeout 5 \
@@ -204,7 +151,7 @@ post_wallet_address_to_dappmanager() {
         --retry 5 \
         --retry-delay 0 \
         --retry-max-time 40 \
-        -X POST "http://dappmanager.dappnode/data-send?key=Hot%20Wallet%20Address&data=${WALLET_ADDRESS}" ||
+        -X POST "http://dappmanager.dappnode/data-send?key=Hot%20Wallet%20Address&data=0x${WALLET_ADDRESS}" ||
         {
             echo -e "[ERROR] failed to post hot wallet address to dappmanager\n"
         }
@@ -213,32 +160,37 @@ post_wallet_address_to_dappmanager() {
 upload_keystores_to_brain() {
     echo "[INFO] Uploading keystores to brain..."
 
-    if ! operator remote-signer-setup \
-        --data-dir $STAKEWISE_DIR \
-        --vault $VAULT_CONTRACT_ADDRESS \
-        --remote-signer-url "$BRAIN_URL" \
+    operator remote-signer-setup \
+        --data-dir "${STAKEWISE_DIR}" \
+        --vault "${VAULT_CONTRACT_ADDRESS}" \
+        --remote-signer-url "${BRAIN_URL}" \
         --dappnode \
-        --execution-endpoints $EXECUTION_ENDPOINT; then
+        --execution-endpoints "${EXECUTION_RPC_API_URL}"
+
+    status=$?
+    if [ $status -ne 0 ]; then
         echo "[ERROR] Failed to upload keystores to brain."
         exit 1
     fi
 }
 
 start_operator() {
-    echo "[INFO] Starting operator for $VAULT_CONTRACT_ADDRESS..."
+    echo "[INFO] Starting operator for ${VAULT_CONTRACT_ADDRESS}..."
 
+    # shellcheck disable=SC2086
+    # operator shortcut does not work with the exec command
     exec python3 /app/src/main.py start \
-        --log-level $LOG_LEVEL \
+        --log-level "${LOG_LEVEL}" \
         --log-format plain \
-        --vault $VAULT_CONTRACT_ADDRESS \
-        --execution-endpoints $EXECUTION_ENDPOINT \
-        --consensus-endpoints $BEACON_NODE_ENDPOINT \
+        --vault "${VAULT_CONTRACT_ADDRESS}" \
+        --execution-endpoints "${EXECUTION_RPC_API_URL}" \
+        --consensus-endpoints "${BEACON_API_URL}" \
         --enable-metrics \
         --metrics-port 8008 \
         --metrics-host 0.0.0.0 \
-        --network $NETWORK \
-        --data-dir $STAKEWISE_DIR \
-        --database-dir $DATABASE_DIR
+        --network "${NETWORK}" \
+        --data-dir "${STAKEWISE_DIR}" \
+        --database-dir "${DATABASE_DIR}" ${EXTRA_OPTS}
 }
 
 main() {
@@ -246,7 +198,7 @@ main() {
     create_directories
     init_operator
     create_wallet
-    create_validators
+    ensure_number_of_validators
     post_wallet_address_to_dappmanager
     upload_keystores_to_brain
     start_operator
