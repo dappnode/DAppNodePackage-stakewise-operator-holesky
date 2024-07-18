@@ -31,7 +31,7 @@ load_envs() {
 
     EXECUTION_RPC_API_URL=$(get_execution_rpc_api_url_from_global_env "$NETWORK" "$SUPPORTED_NETWORKS")
     BEACON_API_URL=$(get_beacon_api_url_from_global_env "$NETWORK" "$SUPPORTED_NETWORKS")
-    BRAIN_URL=$(get_brain_api_url"$NETWORK" "$SUPPORTED_NETWORKS")
+    BRAIN_URL=$(get_brain_api_url "$NETWORK" "$SUPPORTED_NETWORKS")
 }
 
 load_env_and_store_to_file() {
