@@ -29,9 +29,9 @@ load_envs() {
     CONFIG_FILE_PATH="$VAULT_DATA_DIR/config.json"
     WALLET_FILE_PATH="$VAULT_DATA_DIR/wallet/wallet.json"
 
-    export_execution_rpc_api_url "$NETWORK" "$SUPPORTED_NETWORKS"
-    export_beacon_api_url "$NETWORK" "$SUPPORTED_NETWORKS"
-    export_brain_url "$NETWORK" "$SUPPORTED_NETWORKS"
+    EXECUTION_RPC_API_URL=$(get_execution_rpc_api_url_from_global_env "$NETWORK" "$SUPPORTED_NETWORKS")
+    BEACON_API_URL=$(get_beacon_api_url_from_global_env "$NETWORK" "$SUPPORTED_NETWORKS")
+    BRAIN_URL=$(get_brain_api_url "$NETWORK" "$SUPPORTED_NETWORKS")
 }
 
 load_env_and_store_to_file() {
@@ -169,7 +169,7 @@ upload_keystores_to_brain() {
 
     status=$?
     if [ $status -ne 0 ]; then
-        echo "[ERROR] Failed to upload keystores to brain."
+        echo "[ERROR] Failed to upload keystores to brain. Make sure your ${NETWORK} Web3Signer is up and running."
         exit 1
     fi
 }
