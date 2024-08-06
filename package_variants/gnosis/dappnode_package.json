@@ -1,0 +1,10 @@
+{
+  "name": "stakewise-operator-gnosis.dnp.dappnode.eth",
+  "version": "0.1.0",
+  "globalEnvs": [
+    {
+      "envs": ["CONSENSUS_CLIENT_GNOSIS", "EXECUTION_CLIENT_GNOSIS"],
+      "services": ["operator"]
+    }
+  ]
+}
