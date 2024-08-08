@@ -4,7 +4,7 @@ services:
     build:
       context: operator
       args:
-        UPSTREAM_VERSION: v2.0.3
+        UPSTREAM_VERSION: v2.0.3.restaking
         STAKER_SCRIPTS_VERSION: v0.1.0
         DATA_DIR: /app/data
     restart: unless-stopped
